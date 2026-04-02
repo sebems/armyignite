@@ -1,36 +1,40 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 from xml_conversion import export_xml
 
-st.title("Calvin CSV to XML Conversion")
+# Set page configuration
+st.set_page_config(page_title="Calvin ArmyIgnite Conversion", page_icon=":file_folder:", layout="wide")
 
+st.title("Calvin ArmyIgnite Conversion")
+
+# Initialize export_file variable to store the converted XML data
 export_file = ''
 
-uploaded_file = st.file_uploader("Upload CSV File", type="csv")
+# File uploader for CSV files
+# The uploaded file is read into a DataFrame, displayed, and then converted to XML format.
+# If any errors occur during the file reading or conversion process, an error message is displayed.
+uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 if uploaded_file is not None:
-    match uploaded_file.type:
-        case "text/csv":
-            try:
-                csv_df = pd.read_csv(
-                    uploaded_file, encoding="ascii", encoding_errors="ignore"
-                )
-                st.write(csv_df)
+    try:
+        csv_df = pd.read_csv(
+            uploaded_file, encoding="utf-8", encoding_errors="ignore"
+        )
+        st.write(csv_df)
 
-                export_file = export_xml(csv_df.values.tolist())
-            except Exception as err:
-                st.error(type(err))  # the exception type
-                st.error(err.args)  # arguments stored in .args
-                st.error(err)
+        export_file = export_xml(csv_df.values.tolist())
+        st.success("CSV file has been converted to XML format")
+        st.metric("Total Rows Converted", len(csv_df))
 
-            st.success("CSV file has been converted to XML format")
-        case _:
-            st.error("File given is not a CSV: ", uploaded_file.type)
-            # redundant since file_uploader only takes files of csv
+    except Exception as err:
+        st.error(err)
 
-st.divider()
+# If a file has been uploaded and successfully converted, a download button is displayed to allow the user to download the XML file.
+# The download button is only shown if both the uploaded file and the export file are available.
+if uploaded_file is not None and export_file:
+    st.divider()
 
-
-st.download_button(
-    "Download File", data=export_file, file_name="xml_export.xml", mime="text/xml"
-)
+    st.info("You can download the XML file using the button below")
+    st.download_button(
+        "Download File", data=export_file, file_name="xml_export.xml", mime="text/xml"
+    )
